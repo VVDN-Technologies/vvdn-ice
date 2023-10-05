@@ -1,0 +1,69 @@
+{{- if .Values.httpsIngress }}
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ .Values.https_ingress.ManagedCertificate.name }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  domains:
+  {{- range .Values.https_ingress.ManagedCertificate.domains }}
+    - {{ . }}
+  {{- end }}
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ .Values.https_ingress.FrontendConfig.name}}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  redirectToHttps:
+    enabled: {{ .Values.https_ingress.FrontendConfig.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.https_ingress.name }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+  namespace: {{ .Values.namespace }}
+  annotations: 
+  {{- range $key, $value := $.Values.https_ingress.annotations }}
+    {{ $key }}: {{ if eq $value "gce" }}{{ quote $value }}{{ else }}{{ $value }}{{ end }}
+  {{- end }}
+spec:
+  rules:
+    - http:
+        paths:
+        {{- range .Values.https_ingress.paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ .backend.service.name }}
+                port:
+                  number: {{ .backend.service.port.number }}
+        {{- end }}
+{{ else }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.http_ingress.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  rules:
+    - http:
+        paths:
+        {{- range .Values.http_ingress.paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ .backend.service.name }}
+                port:
+                  number: {{ .backend.service.port.number }}
+        {{- end }}
+{{ end }}

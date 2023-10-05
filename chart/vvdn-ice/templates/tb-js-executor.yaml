@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.js_executor.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  replicas: {{ .Values.js_executor.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.js_executor.deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.js_executor.deployment.name }}
+    spec:
+      containers:
+        - name: {{ .Values.js_executor.deployment.containerName }}
+          imagePullPolicy: {{ .Values.js_executor.deployment.imagePullPolicy }}
+          image: {{ .Values.js_executor.deployment.image }}
+          resources:
+            limits:
+              cpu: {{ .Values.js_executor.deployment.resources.limitscpu | quote }}
+              memory: {{ .Values.js_executor.deployment.resources.limitsmemory }}
+            requests:
+              cpu: {{ .Values.js_executor.deployment.resources.requestscpu | quote }}
+              memory: {{ .Values.js_executor.deployment.resources.requestsmemory }}
+          env:
+          {{- include "helpers.list-env-tb-js-executor" . | indent 7}}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.kafka.configmap1.name }}
+      restartPolicy: {{ .Values.js_executor.restartPolicy }}

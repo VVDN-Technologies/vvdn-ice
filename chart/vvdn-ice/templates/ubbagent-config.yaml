@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # name: {{.Values.name}}-ubbagent-config
+  name: test-deployment-ubbagent-config
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  config.yaml: |
+    identities:
+    - name: gcp
+      gcp:
+        encodedServiceAccountKey: $AGENT_ENCODED_KEY
+    metrics:
+    - name: standard
+      type: int
+      endpoints:
+      - name: on_disk
+      - name: servicecontrol
+      aggregation:
+        bufferSeconds: 60
+    endpoints:
+    - name: on_disk
+      disk:
+        reportDir: /var/lib/ubbagent/reports
+        expireSeconds: 3600
+    - name: servicecontrol
+      servicecontrol:
+        identity: gcp
+        serviceName: vvdn-ice.endpoints.vvdn-ic-public.cloud.goog
+        consumerId: $AGENT_CONSUMER_ID

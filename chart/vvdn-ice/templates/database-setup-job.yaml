@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.database_setup_job.Job.name }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  completions: {{ .Values.database_setup_job.Job.completions }}
+  template:
+    spec:
+      restartPolicy: {{ .Values.database_setup_job.Job.restartPolicy }}
+      volumes:
+      - name: {{ .Values.node.statefulSet.volumesName }}
+        configMap:
+            name: {{ .Values.node.configmap.name }}
+            items:
+              {{- range .Values.node.statefulSet.items }}
+              - key: {{ .key }}
+                path: {{ .path }}
+              {{- end }}
+      - name: {{ .Values.node.statefulSet.volumesName2 }}
+        emptyDir: {}
+      containers:
+      - name: {{ .Values.database_setup_job.Job.containerName }}
+        imagePullPolicy: {{ .Values.database_setup_job.Job.imagePullPolicy }}
+        image: {{ .Values.node.statefulSet.image }}
+        env:
+        - name: {{ .Values.node.statefulSet.envName }}
+          valueFrom:
+            fieldRef:
+              fieldPath: {{ .Values.node.statefulSet.fieldPath }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.node.configmapDB.name }}
+        volumeMounts:
+          {{- range .Values.node.statefulSet.volumeMounts }}
+          - mountPath: {{ .mountPath }}
+            name: {{ .name }}
+          {{- end }}
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - |
+          export INSTALL_TB=true
+          export LOAD_DEMO='"$loadDemo"'
+          start-tb-node.sh
+          touch /tmp/install-finished
+          while [ ! -f /tmp/install-finished ]; do
+            sleep 2
+          done

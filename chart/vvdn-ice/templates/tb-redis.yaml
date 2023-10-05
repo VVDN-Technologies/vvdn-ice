@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.redis.configmap.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.redis.configmap.name }}
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  {{- toYaml .Values.redis.configmap | nindent 2 | replace "name: tb-redis-config" "" }}
+---  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.redis.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.redis.deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.redis.deployment.name }}
+    spec:
+      containers:
+        - name: {{ .Values.redis.deployment.containerName }}
+          imagePullPolicy: {{ .Values.redis.deployment.imagePullPolicy }}
+          image: {{ .Values.redis.deployment.image }}
+          ports:
+            {{- range .Values.redis.deployment.ports }}
+            - containerPort: {{ .containerPort }}
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.redis.deployment.resources.limitscpu | quote }}
+              memory: {{ .Values.redis.deployment.resources.limitsmemory }}
+            requests:
+              cpu: {{ .Values.redis.deployment.resources.requestscpu | quote }}
+              memory: {{ .Values.redis.deployment.resources.requestsmemory }}
+          readinessProbe:
+            periodSeconds: {{ .Values.redis.deployment.readinessProbeperiodSeconds }}
+            tcpSocket:
+              port: {{ .Values.redis.deployment.readinessProbetcpSocketPort }}
+          livenessProbe:
+            periodSeconds: {{ .Values.redis.deployment.livenessProbeperiodSeconds }}
+            tcpSocket:
+              port: {{ .Values.redis.deployment.livenessProbetcpSocketPort }}
+          volumeMounts:
+            {{- range .Values.redis.deployment.volumeMounts }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.redis.deployment.volumesName }}
+          emptyDir: {}
+      restartPolicy: {{ .Values.redis.restartPolicy }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redis.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.redis.service.type }}
+  selector:
+    app: {{ .Values.redis.deployment.name }}
+  ports:
+    {{- range .Values.redis.service.ports }}
+    - name: {{ .name }}
+      port: {{ .port }}
+    {{- end }}

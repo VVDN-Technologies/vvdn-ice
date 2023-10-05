@@ -1,0 +1,74 @@
+x-google-marketplace:
+  schemaVersion: v2
+
+  applicationApiVersion: v1beta1
+
+  publishedVersion: '2.0.5'
+  publishedVersionMetadata:
+    releaseNote: >-
+      Initial Release of VVDN Intelligent Cloud Engine
+    releaseTypes:
+      - Feature
+    recommended: false
+
+  images:
+    node:
+      properties:
+        node.statefulSet.image:
+          type: FULL
+        AppVersion:
+          type: TAG
+
+properties:
+  name:                   
+    type: string
+    x-google-marketplace:
+      type: NAME
+  namespace:              
+    type: string
+    default: default
+    x-google-marketplace:
+      type: NAMESPACE
+  coapTransport:
+    type: boolean
+    default: false
+    title: Deploys COAP transport service
+    description: Tick this if you want to deploy coap transport service
+  lwm2mTransport:
+    type: boolean
+    default: false
+    title: Deploys lwm2m transport service
+    description: Tick this if you want to deploy lwm2m transport service
+  mqttTransport:
+    type: boolean
+    default: false
+    description: Tick this if you want to deploy mqtt transport service
+  snmpTransport:
+    type: boolean
+    default: false
+    title: Deploys snmp transport service
+    description: Tick this if you want to deploy snmp transport service
+  ingress.enabled:
+    type: boolean
+    default: true
+    x-google-marketplace:
+      type: INGRESS_AVAILABLE
+  httpsIngress:
+    type: boolean
+    default: false
+    title: Ticking this will add https Ingress.
+    description: For this to work you must be having your domain name added in CloudDNS.
+  reportingSecret:
+    type: string
+    x-google-marketplace:
+      type: REPORTING_SECRET
+
+
+required:
+- name
+- namespace
+- coapTransport
+- lwm2mTransport
+- mqttTransport
+- snmpTransport
+- httpsIngress

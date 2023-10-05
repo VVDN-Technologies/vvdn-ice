@@ -1,0 +1,97 @@
+{{- if .Values.coapTransport }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.tb_coap_transport.configmap.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.tb_coap_transport.configmap.labels }}
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  conf:
+    {{- .Values.tb_coap_transport.configmap.conf | toYaml | indent 4 }}
+  logback:
+    {{- .Values.tb_coap_transport.configmap.logback | toYaml | indent 4 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.tb_coap_transport.statefulset.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  serviceName: {{ .Values.tb_coap_transport.statefulset.serviceName | quote }}
+  podManagementPolicy: {{ .Values.tb_coap_transport.statefulset.podManagementPolicy }}
+  replicas: {{ .Values.tb_coap_transport.statefulset.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.tb_coap_transport.statefulset.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.tb_coap_transport.statefulset.name }}
+    spec:
+      volumes:
+        - name: {{ .Values.tb_coap_transport.statefulset.volumesName }}
+          configMap:
+            name: {{ .Values.tb_coap_transport.configmap.name }}
+            items:
+            {{- range .Values.tb_coap_transport.statefulset.items }}
+            - key: {{ .key }}
+              path: {{ .path }}
+            {{- end }}
+      containers:
+        - name: {{ .Values.tb_coap_transport.statefulset.containerName }}
+          imagePullPolicy: {{ .Values.tb_coap_transport.statefulset.imagePullPolicy }}
+          image: {{ .Values.tb_coap_transport.statefulset.image }}
+          ports:
+            {{- range .Values.tb_coap_transport.statefulset.containerPorts }}
+            - containerPort: {{ .containerPort }}
+              name: {{ .name }}
+              protocol: {{ .protocol }}
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.tb_coap_transport.statefulset.resources.limitscpu | quote }}
+              memory: {{ .Values.tb_coap_transport.statefulset.resources.limitsmemory }}
+            requests:
+              cpu: {{ .Values.tb_coap_transport.statefulset.resources.requestscpu | quote }}
+              memory: {{ .Values.tb_coap_transport.statefulset.resources.requestsmemory }}
+          env:
+            - name: {{ .Values.tb_coap_transport.statefulset.envName }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: {{ .Values.tb_coap_transport.statefulset.fieldPath }}
+          {{- include "helpers.list-env-tb-coap-transport" . | indent 7 }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.kafka.configmap1.name }}
+            - configMapRef:
+                name: {{ .Values.redis.configmap.name }}
+          volumeMounts:
+            {{- range .Values.tb_coap_transport.statefulset.volumeMounts }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+            {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.tb_coap_transport.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.tb_coap_transport.service.type }}
+  externalTrafficPolicy: {{ .Values.tb_coap_transport.service.externalTrafficPolicy }}
+  selector:
+    app: {{ .Values.tb_coap_transport.statefulset.name }}
+  ports:
+    {{- range .Values.tb_coap_transport.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      name: {{ .name }}
+      protocol: {{ .protocol }}
+    {{- end }}
+{{ end }}

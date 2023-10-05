@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.node.configmap.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.node.configmap.labels }}
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  conf:
+    {{- .Values.node.configmap.conf | toYaml | indent 2 }}
+  logback:
+    {{- .Values.node.configmap.logback | toYaml | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.node.configmapDB.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.node.configmapDB.name }}
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  {{- toYaml .Values.node.configmapDB | nindent 2 | replace "name: tb-node-db-config" "" }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.node.statefulSet.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  serviceName: {{ .Values.node.statefulSet.serviceName | quote }}
+  replicas: {{ .Values.node.statefulSet.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.node.statefulSet.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.node.statefulSet.name }}
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.node.statefulSet.runAsUser }}
+        runAsNonRoot: {{ .Values.node.statefulSet.runAsNonRoot }}
+        fsGroup: {{ .Values.node.statefulSet.fsGroup }}
+      volumes:
+        - name: {{ .Values.node.statefulSet.volumesName }}
+          configMap:
+            name: {{ .Values.node.configmap.name }}
+            items:
+              {{- range .Values.node.statefulSet.items }}
+              - key: {{ .key }}
+                path: {{ .path }}
+              {{- end }}
+        - name: {{ .Values.node.statefulSet.volumesName2 }}
+          emptyDir: {}
+      containers:
+        - name: {{ .Values.node.statefulSet.containerName }}
+          imagePullPolicy: {{ .Values.node.statefulSet.imagePullPolicy }}
+          image: {{ .Values.node.statefulSet.image }}
+          ports:
+            {{- range .Values.node.statefulSet.containerPorts }}
+            - containerPort: {{ .containerPort }}
+              name: {{ .name }}
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.node.statefulSet.resources.limitscpu | quote }}
+              memory: {{ .Values.node.statefulSet.resources.limitsmemory }}
+            requests:
+              cpu: {{ .Values.node.statefulSet.resources.requestscpu | quote }}
+              memory: {{ .Values.node.statefulSet.resources.requestsmemory }}
+          env:
+            - name: {{ .Values.node.statefulSet.envName }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: {{ .Values.node.statefulSet.fieldPath }}
+          {{- include "helpers.list-env-tb-node" . | indent 7 }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.node.configmapDB.name }}
+            - configMapRef:
+                name: {{ .Values.kafka.configmap1.name }}
+            - configMapRef:
+                name: {{ .Values.redis.configmap.name }}
+          volumeMounts:
+            {{- range .Values.node.statefulSet.volumeMounts }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.node.statefulSet.readinessProbepath }}
+              port: {{ .Values.node.statefulSet.readinessProbeport }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.node.statefulSet.livenessProbepath }}
+              port: {{ .Values.node.statefulSet.livenessProbeport }}
+            initialDelaySeconds: {{ .Values.node.statefulSet.livenessProbeinitialDelaySeconds }}
+            timeoutSeconds: {{ .Values.node.statefulSet.livenessProbetimeoutSeconds }}
+      restartPolicy: {{ .Values.node.statefulSet.restartPolicy }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.node.Service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.node.Service.type }}
+  selector:
+    app: {{ .Values.node.statefulSet.name }}
+  ports:
+    {{- range .Values.node.Service.ports }}
+    - name: {{ .name }}
+      port: {{ .port }}
+    {{- end }}

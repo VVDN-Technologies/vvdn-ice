@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.zookeeper.configmap.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  start-node.sh: {{ index .Values "zookeeper" "configmap" "start-node.sh" | toYaml | indent 2 }}
+  zoo.cfg: |+
+    dataDir={{ .Values.zookeeper.configmap.dataDir1 }}
+    dataLogDir={{ .Values.zookeeper.configmap.dataLogDir1 }}
+    tickTime={{ .Values.zookeeper.configmap.tickTime1 }}
+    initLimit={{ .Values.zookeeper.configmap.initLimit1 }}
+    syncLimit={{ .Values.zookeeper.configmap.syncLimit1 }}
+    maxClientCnxns={{ .Values.zookeeper.configmap.maxClientCnxns1 }}
+    standaloneEnabled={{ .Values.zookeeper.configmap.standaloneEnabled }}
+    server.0=zookeeper-0.{{.Values.zookeeper.service_headless.name}}.{{.Values.namespace}}.svc.cluster.local:2888:3888;2181
+    server.1=zookeeper-1.{{.Values.zookeeper.service_headless.name}}.{{.Values.namespace}}.svc.cluster.local:2888:3888;2181
+    server.2=zookeeper-2.{{.Values.zookeeper.service_headless.name}}.{{.Values.namespace}}.svc.cluster.local:2888:3888;2181
+  log4j.properties: {{ index .Values "zookeeper" "configmap" "log4j.properties" | toYaml | indent 2 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.zookeeper.statefulset.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  serviceName: {{ .Values.zookeeper.statefulset.serviceName | quote }}
+  replicas: {{ .Values.zookeeper.statefulset.replicas }}
+  podManagementPolicy: {{ .Values.zookeeper.statefulset.podManagementPolicy }}
+  selector:
+    matchLabels:
+      app: {{ .Values.zookeeper.statefulset.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.zookeeper.statefulset.name }}
+    spec:
+      containers:
+        - name: {{ .Values.zookeeper.statefulset.containerName }}
+          imagePullPolicy: {{ .Values.zookeeper.statefulset.imagePullPolicy }}
+          image: {{ .Values.zookeeper.statefulset.image }}
+          ports:
+            {{- range .Values.zookeeper.statefulset.ports }}
+            - containerPort: {{ .containerPort }}
+              name: {{ .name }}
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.zookeeper.statefulset.resources.limitscpu | quote }}
+              memory: {{ .Values.zookeeper.statefulset.resources.limitsmemory }}
+            requests:
+              cpu: {{ .Values.zookeeper.statefulset.resources.requestscpu | quote }}
+              memory: {{ .Values.zookeeper.statefulset.resources.requestsmemory }}
+          command: ["/conf/start-node.sh"]
+          readinessProbe:
+            periodSeconds: {{ .Values.zookeeper.statefulset.readinessProbeperiodSeconds }}
+            tcpSocket:
+              port: {{ .Values.zookeeper.statefulset.readinessProbetcpSocketPort }}
+          livenessProbe:
+            periodSeconds: {{ .Values.zookeeper.statefulset.livenessProbeperiodSeconds }}
+            tcpSocket:
+              port: {{ .Values.zookeeper.statefulset.livenessProbetcpSocketPort }}
+          env:
+          {{- include "helpers.list-env-tb-zookeeper" . | indent 7}}
+            - name: {{ .Values.zookeeper.statefulset.envName }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: {{ .Values.zookeeper.statefulset.fieldPath }}
+          volumeMounts:
+          {{- range .Values.zookeeper.statefulset.volumeMounts }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+      volumes:
+        - name: {{ .Values.zookeeper.statefulset.volumesName }}
+          configMap:
+            name: {{ .Values.zookeeper.configmap.name }}
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.zookeeper.statefulset.volumeClaimTemplateName1 }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.zookeeper.statefulset.requestStorage1 }}
+    - metadata:
+        name: {{ .Values.zookeeper.statefulset.volumeClaimTemplateName2 }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.zookeeper.statefulset.requestStorage2 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zookeeper.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.zookeeper.service.type }}
+  ports:
+    {{- range .Values.zookeeper.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      name: {{ .name }}
+    {{- end }}
+  selector:
+    app: {{ .Values.zookeeper.statefulset.name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zookeeper.service_headless.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.zookeeper.statefulset.name }}
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  ports:
+    {{- range .Values.zookeeper.service_headless.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      name: {{ .name }}
+    {{- end }}
+  clusterIP: {{ .Values.zookeeper.service_headless.clusterIP }}
+  selector:
+    app: {{ .Values.zookeeper.statefulset.name }}

@@ -1,0 +1,883 @@
+# Default values for vvdn-ice.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+namespace: null
+coapTransport: false
+lwm2mTransport: false
+mqttTransport: false
+snmpTransport: false
+httpsIngress: false
+## tb-node
+node:
+  configmap:
+    name: tb-node-config
+    labels: tb-node-config
+    conf: |
+      export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/ice/data"
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/ice/gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/ice/heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=ice.out
+      export LOADER_PATH=/usr/share/ice/conf,/usr/share/ice/extensions
+    logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+          <appender name="fileLogAppender"
+                    class="ch.qos.logback.core.rolling.RollingFileAppender">
+              <file>/var/log/ice/ice.log</file>
+              <rollingPolicy
+                      class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                  <fileNamePattern>/var/log/ice/ice.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                  <maxFileSize>100MB</maxFileSize>
+                  <maxHistory>30</maxHistory>
+                  <totalSizeCap>3GB</totalSizeCap>
+              </rollingPolicy>
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <logger name="org.ice.server" level="INFO" />
+          <logger name="com.google.common.util.concurrent.AggregateFuture" level="OFF" />
+          <root level="INFO">
+              <appender-ref ref="fileLogAppender"/>
+              <appender-ref ref="STDOUT"/>
+          </root>
+      </configuration>
+  configmapDB:
+    name: tb-node-db-config
+    SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+    SPRING_DRIVER_CLASS_NAME: org.postgresql.Driver
+    SPRING_DATASOURCE_URL: jdbc:postgresql://ha-postgres-postgresql-ha-pgpool:5432/vvdn-ice-test
+    SPRING_DATASOURCE_USERNAME: postgres
+    SPRING_DATASOURCE_PASSWORD: vvdnicon
+  statefulSet:
+    name: tb-node
+    serviceName: tb-node
+    replicas: 2
+    runAsUser: 799
+    runAsNonRoot: true
+    fsGroup: 799
+    volumesName: tb-node-config
+    items:
+      - key: conf
+        path: ice.conf
+      - key: logback
+        path: logback.xml
+    volumesName2: tb-node-logs
+    containerName: server
+    imagePullPolicy: Always
+    image: gcr.io/vvdn-ic-public/vvdn-ice/node:2.0.5
+    containerPorts:
+      - containerPort: 8080
+        name: http
+      - containerPort: 7070
+        name: edge
+    resources:
+      limitscpu: "1000m"
+      limitsmemory: 5000Mi
+      requestscpu: "1000m"
+      requestsmemory: 2000Mi
+    envName: TB_SERVICE_ID
+    fieldPath: metadata.name
+    env:
+      TB_SERVICE_TYPE: "monolith"
+      ZOOKEEPER_ENABLED: "true"
+      ZOOKEEPER_URL: "zookeeper:2181"
+      JS_EVALUATOR: "remote"
+      HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE: "false"
+      HTTP_ENABLED: "false"
+      MQTT_ENABLED: "false"
+      COAP_ENABLED: "false"
+      SNMP_ENABLED: "false"
+      LWM2M_ENABLED: "false"
+    volumeMounts:
+      - mountPath: /config
+        name: tb-node-config
+      - mountPath: /var/log/ice
+        name: tb-node-logs
+    readinessProbepath: /login
+    readinessProbeport: http
+    livenessProbepath: /login
+    livenessProbeport: http
+    livenessProbeinitialDelaySeconds: 460
+    livenessProbetimeoutSeconds: 10
+    restartPolicy: Always  
+  Service:
+    name: tb-node
+    type: ClusterIP
+    ports:
+      - port: 8080
+        name: http           
+## tb-web-ui
+web_ui:
+  deployment:
+    name: tb-web-ui
+    replicas: 2
+    containerName: server
+    image: gcr.io/vvdn-ic-public/vvdn-ice/web-ui:2.0.5
+    imagePullPolicy: Always
+    containerPorts: 
+    - containerPort: 8080
+      name: http
+    resources:
+      limitscpu:  "100m"
+      limitsmemory: 100Mi
+      requestscpu: "100m"
+      requestsmemory: 100Mi
+    env:
+      HTTP_BIND_ADDRESS: "0.0.0.0"
+      HTTP_BIND_PORT: "8080"
+      TB_ENABLE_PROXY: "false"
+      LOGGER_LEVEL: "info"
+      LOG_FOLDER: "logs"
+      LOGGER_FILENAME: "tb-web-ui-%DATE%.log"
+      NODE_OPTIONS: "--max-old-space-size=100"
+      DOCKER_MODE: "true"
+    livenessProbepath: /index.html
+    livenessProbeport: http
+    livenessProbeinitialDelaySeconds: 120
+    livenessProbetimeoutSeconds: 10
+  restartPolicy: Always
+  service:
+    name: tb-web-ui
+    type: ClusterIP
+    ports:
+      - port: 8080
+        name: http
+## tb-js-executor
+js_executor:
+  deployment:
+    name: tb-js-executor
+    replicas: 5
+    containerName: server
+    image: gcr.io/vvdn-ic-public/vvdn-ice/js-executor:2.0.5
+    imagePullPolicy: Always
+    resources:
+      limitscpu: "100m"
+      limitsmemory: 400Mi
+      requestscpu: "100m"
+      requestsmemory: 100Mi
+    env:
+      REMOTE_JS_EVAL_REQUEST_TOPIC: "js_eval.requests"
+      LOGGER_LEVEL: "info"
+      LOG_FOLDER: "logs"
+      LOGGER_FILENAME: "tb-js-executor-%DATE%.log"
+      DOCKER_MODE: "true"
+      SCRIPT_BODY_TRACE_FREQUENCY: "1000"
+      NODE_OPTIONS: "--max-old-space-size=200"
+  restartPolicy: Always
+## tb-redis
+redis:
+  configmap:
+    name: tb-redis-config
+    CACHE_TYPE: redis
+    REDIS_CONNECTION_TYPE: standalone
+    REDIS_HOST: tb-redis
+  deployment:
+    name: tb-redis
+    containerName: server
+    ports:
+      - containerPort: 6379
+    imagePullPolicy: Always
+    image: redis:4.0
+    resources:
+      limitscpu: "300m"
+      limitsmemory: 1200Mi
+      requestscpu: "300m"
+      requestsmemory: 1200Mi
+    readinessProbeperiodSeconds: 5
+    readinessProbetcpSocketPort: 6379
+    livenessProbeperiodSeconds: 5
+    livenessProbetcpSocketPort: 6379
+    volumeMounts:
+      - mountPath: /data
+        name: redis-data
+    volumesName: redis-data
+  restartPolicy: Always
+  service:
+    name: tb-redis
+    type: ClusterIP
+    ports:
+      - name: tb-redis-port
+        port: 6379    
+## tb-kafka
+kafka:
+  configmap1:
+    name: tb-kafka-config
+    labels: tb-kafka-config
+    TB_QUEUE_TYPE: kafka
+    TB_KAFKA_SERVERS: tb-kafka:9092
+  configmap2:
+    name: tb-kafka
+    start-node.sh: |
+      #!/bin/sh
+      cp /tmp/tools-log4j.properties /opt/kafka/config/tools-log4j.properties
+      cp /tmp/log4j.properties /opt/kafka/config/log4j.properties
+      /usr/bin/start-kafka.sh
+    tools-log4j.properties: |+
+      log4j.rootLogger=WARN, stdout
+      log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+      log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+      log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+    log4j.properties: |+
+      log4j.rootLogger=INFO, stdout
+      log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+      log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+      log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+      log4j.logger.org.apache.zookeeper=INFO
+      log4j.logger.kafka=INFO
+      log4j.logger.org.apache.kafka=INFO
+      log4j.logger.kafka.request.logger=WARN, stdout
+      log4j.additivity.kafka.request.logger=false
+  statefulset:
+    name: tb-kafka
+    serviceName: "tb-kafka"
+    podManagementPolicy: Parallel
+    containerName: server
+    imagePullPolicy: Always
+    image: wurstmeister/kafka:latest 
+    ports:
+      - containerPort: 9092
+        name: kafka-int
+    resources:
+      limitscpu: "3000m"
+      limitsmemory: 8000Mi
+      requestscpu: "3000m"
+      requestsmemory: 8000Mi
+    readinessProbeperiodSeconds: 20
+    readinessProbetcpSocketport: 9092
+    livenessProbeinitialDelaySeconds: 25
+    livenessProbeperiodSeconds: 5
+    livenessProbetcpSocketport: 9092
+    env:
+      BROKER_ID_COMMAND: "hostname | cut -d'-' -f3"
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENERS: "INSIDE://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INSIDE://:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INSIDE:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INSIDE"
+      KAFKA_CREATE_TOPICS: "js_eval.requests:100:1:delete --config=retention.ms=600 --config=segment.bytes=2621440 --config=retention.bytes=104857600,tb_transport.api.requests:30:1:delete --config=retention.ms=60000 --config=segment.bytes=2621440 --config=retention.bytes=10485760,tb_rule_engine:30:1:delete --config=retention.ms=6000 --config=segment.bytes=2621440 --config=retention.bytes=10485760"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_RETENTION_BYTES: "25435456"
+      KAFKA_LOG_SEGMENT_BYTES: "25435456"
+      KAFKA_LOG_RETENTION_MS: "50000"
+      KAFKA_LOG_CLEANUP_POLICY: "delete"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "3000"
+      KAFKA_PORT: "9092"
+      KAFKA_LOG_DIRS: "/kafka-logs/kafka"
+    volumeMounts:
+        - name: logs
+          mountPath: /kafka-logs
+          readOnly: false
+        - name: start
+          mountPath: /tmp
+          readOnly: false
+        - name: app-logs
+          mountPath: /opt/kafka/logs
+          readOnly: false
+        - name: config
+          mountPath: /opt/kafka/config
+          readOnly: false
+    volumesName: start
+    metadataName1: logs
+    metadataName2: app-logs
+    metadataName3: config
+    requestStorage1: 50Gi
+    requestStorage2: 100Gi
+    requestStorage3: 50Gi
+  service:
+    name: tb-kafka
+    type: ClusterIP
+    ports:
+      - port: 9092
+        name: kafka-int
+    clusterIP: None
+## tb-zookeeper
+zookeeper:
+  configmap:
+    name: tb-zookeeper
+    dataDir: /data
+    dataLogDir: /datalog
+    tickTime: 2000
+    initLimit: 5
+    syncLimit: 2
+    maxClientCnxns: 200
+    standaloneEnabled: true
+    start-node.sh: |
+      #!/bin/sh
+      set -ex;
+      mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR";
+      echo $HOSTNAME| rev | cut -d "-" -f1 | rev > "$ZOO_DATA_DIR/myid"
+      zkServer.sh start-foreground /conf/zoo.cfg
+    dataDir1: /data
+    dataLogDir1: /datalog
+    tickTime1: 2000
+    initLimit1: 5
+    syncLimit1: 2
+    maxClientCnxns1: 200
+    standaloneEnabled1: true
+    log4j.properties: |+
+      zookeeper.root.logger=INFO, CONSOLE
+      zookeeper.console.threshold=INFO
+      log4j.rootLogger=${zookeeper.root.logger}
+      log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+      log4j.appender.CONSOLE.Threshold=${zookeeper.console.threshold}
+      log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+      log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n
+  statefulset:
+    name: zookeeper
+    serviceName: "zookeeper-headless"
+    replicas: 3
+    podManagementPolicy: Parallel
+    containerName: zookeeper
+    imagePullPolicy: Always
+    image: zookeeper:3.5.7
+    ports:
+      - containerPort: 2181
+        name: client
+      - containerPort: 2888
+        name: server
+      - containerPort: 3888
+        name: election
+    resources:
+      limitscpu: "200m"
+      limitsmemory: 800Mi
+      requestscpu: "200m"
+      requestsmemory: 800Mi
+    readinessProbeperiodSeconds: 60
+    readinessProbetcpSocketPort: 2181
+    livenessProbeperiodSeconds: 60
+    livenessProbetcpSocketPort: 2181
+    envName: HOSTNAME
+    fieldPath: metadata.name
+    env:
+      JVMFLAGS: "-Dzookeeper.electionPortBindRetry=0"
+    volumesName: conf
+    volumeMounts:
+      - name: conf
+        mountPath: /conf
+        readOnly: false
+      - name: data
+        mountPath: /data
+        readOnly: false
+      - name: datalog
+        mountPath: /datalog
+        readOnly: false
+    volumeClaimTemplateName1: data
+    volumeClaimTemplateName2: datalog
+    requestStorage1: 100Mi
+    requestStorage2: 100Mi
+  service:
+    name: zookeeper
+    type: ClusterIP
+    ports:
+      - port: 2181
+        targetPort: 2181
+        name: client
+      - port: 2888
+        targetPort: 2888
+        name: server
+      - port: 3888
+        targetPort: 3888
+        name: election
+  service_headless:
+    name: zookeeper-headless
+    clusterIP: None
+    ports:
+      - port: 2181
+        targetPort: 2181
+        name: client
+      - port: 2888
+        targetPort: 2888
+        name: server
+      - port: 3888
+        targetPort: 3888
+        name: election
+## tb-snmp-transport
+tb_snmp_transport:
+  configmap:
+    name: tb-snmp-transport-config
+    labels: tb-snmp-transport-config
+    conf: | 
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/tb-snmp-transport/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tb-snmp-transport/${TB_SERVICE_ID}-heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=tb-snmp-transport.out
+      export LOADER_PATH=/usr/share/tb-snmp-transport/conf
+    logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <logger name="org.ice.server.transport.snmp" level="INFO" />
+          <root level="INFO">
+              <appender-ref ref="STDOUT"/>
+          </root>
+      </configuration>
+  statefulset:
+    name: tb-snmp-transport
+    replicas: 2
+    serviceName: "tb-snmp-transport"
+    podManagementPolicy: Parallel
+    volumesName: tb-snmp-transport-config
+    items:
+      - key: conf
+        path: tb-snmp-transport.conf
+      - key: logback
+        path: logback.xml
+    containerName: server
+    imagePullPolicy: Always
+    image: gcr.io/vvdn-ic-public/vvdn-ice/snmp-transport:2.0.5
+    resources:
+      limitscpu: "1000m"
+      limitsmemory: 2000Mi
+      requestscpu: "500m"
+      requestsmemory: 500Mi
+    envName: TB_SERVICE_ID
+    fieldPath: metadata.name
+    env:
+      ZOOKEEPER_ENABLED: "true"
+      ZOOKEEPER_URL: "zookeeper:2181"
+    volumeMounts:
+      - mountPath: /config
+        name: tb-snmp-transport-config
+## tb-mqtt-transport
+tb_mqtt_transport:
+  configmap:
+    name: tb-mqtt-transport-config
+    labels: tb-mqtt-transport-config
+    conf: |
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/tb-mqtt-transport/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tb-mqtt-transport/${TB_SERVICE_ID}-heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=tb-mqtt-transport.out
+      export LOADER_PATH=/usr/share/tb-mqtt-transport/conf
+    logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <logger name="org.ice.server" level="INFO" />
+          <root level="INFO">
+              <appender-ref ref="STDOUT"/>
+          </root>
+      </configuration>
+  statefulset:
+    name: tb-mqtt-transport
+    serviceName: "tb-mqtt-transport"
+    podManagementPolicy: Parallel
+    replicas: 2
+    volumesName: tb-mqtt-transport-config
+    items:
+      - key: conf
+        path: tb-mqtt-transport.conf
+      - key: logback
+        path: logback.xml
+    containerName: server
+    imagePullPolicy: Always
+    image: gcr.io/vvdn-ic-public/vvdn-ice/mqtt-transport:2.0.5
+    containerPorts:
+      - containerPort: 1883
+        name: mqtt
+      - containerPort: 8883
+        name: mqtts
+    resources:
+      limitscpu: "1000m"
+      limitsmemory: 2000Mi
+      requestscpu: "500m"
+      requestsmemory: 500Mi
+    envName: TB_SERVICE_ID
+    fieldPath: metadata.name
+    env:
+      ZOOKEEPER_ENABLED: "true"
+      ZOOKEEPER_URL: "zookeeper:2181"
+    volumeMounts:
+      - mountPath: /config
+        name: tb-mqtt-transport-config
+    readinessProbeperiodSeconds: 20
+    readinessProbetcpSocketport: 1883
+    livenessProbeinitialDelaySeconds: 120
+    livenessProbeperiodSeconds: 20
+    livenessProbetcpSocketport: 1883   
+  service:
+    name: tb-mqtt-loadbalancer
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    ports:
+      - port: 1883
+        targetPort: 1883
+        name: mqtt
+      - port: 8883
+        targetPort: 8883
+        name: mqtts   
+## tb-lwm2m-transport 
+tb_lwm2m_transport:
+  configmap: 
+    name:  tb-lwm2m-transport-config
+    labels: tb-lwm2m-transport-config
+    conf: |
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/tb-lwm2m-transport/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tb-lwm2m-transport/${TB_SERVICE_ID}-heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=tb-lwm2m-transport.out
+      export LOADER_PATH=/usr/share/tb-lwm2m-transport/conf
+    logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <logger name="org.ice.server" level="INFO" />
+          <root level="INFO">
+              <appender-ref ref="STDOUT"/>
+          </root>
+      </configuration> 
+  statefulset:
+    name: tb-lwm2m-transport
+    serviceName: "tb-lwm2m-transport"
+    podManagementPolicy: Parallel
+    replicas: 2
+    volumesName: tb-lwm2m-transport-config
+    items:
+      - key: conf
+        path: tb-lwm2m-transport.conf
+      - key: logback
+        path: logback.xml
+    containerName: server
+    imagePullPolicy: Always
+    image: gcr.io/vvdn-ic-public/vvdn-ice/lwm2m-transport:2.0.5
+    ports:
+      - containerPort: 5685
+        name: lwm2m
+        protocol: UDP
+      - containerPort: 5686
+        name: lwm2ms
+        protocol: UDP
+      - containerPort: 5687
+        name: lwm2m-bs
+        protocol: UDP
+      - containerPort: 5688
+        name: lwm2ms-bs
+        protocol: UDP
+    resources:
+      limitscpu: "1000m"
+      limitsmemory: 2000Mi
+      requestscpu: "500m"
+      requestsmemory: 500Mi
+    envName: TB_SERVICE_ID
+    fieldPath: metadata.name
+    env:
+      ZOOKEEPER_ENABLED: "true"
+      ZOOKEEPER_URL: "zookeeper:2181"
+    volumeMounts:
+      - mountPath: /config
+        name: tb-lwm2m-transport-config
+  service:
+    name: tb-lwm2m-loadbalancer
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    ports:
+      - port: 5685
+        targetPort: 5685
+        name: lwm2m
+        protocol: UDP
+      - port: 5686
+        targetPort: 5686
+        name: lwm2ms
+        protocol: UDP
+      - port: 5687
+        targetPort: 5687
+        name: lwm2m-bs
+        protocol: UDP
+      - port: 5688
+        targetPort: 5688
+        name: lwm2ms-bs
+        protocol: UDP
+## tb-http-transport
+tb_http_transport:
+  configmap: 
+    name: tb-http-transport-config
+    labels: tb-http-transport-config
+    conf: |
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/tb-http-transport/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tb-http-transport/${TB_SERVICE_ID}-heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=tb-http-transport.out
+      export LOADER_PATH=/usr/share/tb-http-transport/conf
+    logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <logger name="org.ice.server" level="INFO" />
+          <root level="INFO">
+              <appender-ref ref="STDOUT"/>
+          </root>
+      </configuration>
+  statefulset:
+    name: tb-http-transport
+    serviceName: "tb-http-transport"
+    podManagementPolicy: Parallel
+    replicas: 2
+    volumesName: tb-http-transport-config
+    items:
+      - key: conf
+        path:  tb-http-transport.conf
+      - key: logback
+        path: logback.xml
+    containerName: server
+    imagePullPolicy: Always
+    image: gcr.io/vvdn-ic-public/vvdn-ice/http-transport:2.0.5
+    containerPorts:
+      - containerPort: 8080
+        name: http
+    resources:
+      limitscpu: "1000m"
+      limitsmemory: 2000Mi
+      requestscpu: "500m"
+      requestsmemory: 500Mi
+    envName: TB_SERVICE_ID
+    fieldPath: metadata.name
+    env:
+      ZOOKEEPER_ENABLED: "true"
+      ZOOKEEPER_URL: "zookeeper:2181"
+      HTTP_BIND_ADDRESS: "0.0.0.0"
+      HTTP_BIND_PORT: "8080"
+      HTTP_REQUEST_TIMEOUT: "60000"
+    volumeMounts:
+      - mountPath: /config
+        name: tb-http-transport-config
+    readinessProbeperiodSeconds: 20
+    readinessProbetcpSocketport: 8080
+    livenessProbeinitialDelaySeconds: 120
+    livenessProbeperiodSeconds: 20
+    livenessProbetcpSocketport: 8080
+  service:
+    name: tb-http-transport
+    type: ClusterIP
+    ports:
+      - port: 8080
+        name: http
+  BackendConfig:
+    healthChecktype: HTTP
+    healthCheckrequestPath: /actuator/info
+    healthCheckPort: 8080
+
+## tb-coap-transport
+tb_coap_transport:
+  configmap:
+    name: tb-coap-transport-config
+    labels: tb-coap-transport-config
+    conf: |
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/tb-coap-transport/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tb-coap-transport/${TB_SERVICE_ID}-heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=tb-coap-transport.out
+      export LOADER_PATH=/usr/share/tb-coap-transport/conf
+    logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+          <logger name="org.ice.server" level="INFO" />
+          <root level="INFO">
+              <appender-ref ref="STDOUT"/>
+          </root>
+      </configuration>
+  statefulset:
+    name: tb-coap-transport
+    serviceName: "tb-coap-transport"
+    podManagementPolicy: Parallel
+    replicas: 2
+    volumesName: tb-coap-transport-config
+    items: 
+      - key: conf
+        path: tb-coap-transport.conf
+      - key: logback
+        path: logback.xml
+    containerName: server
+    imagePullPolicy: Always
+    image: gcr.io/vvdn-ic-public/vvdn-ice/coap-transport:2.0.5
+    containerPorts:
+      - containerPort: 5683
+        name: coap
+        protocol: UDP
+      - containerPort: 5684
+        name: coaps
+        protocol: UDP
+    resources:
+      limitscpu: "1000m"
+      limitsmemory: 2000Mi
+      requestscpu: "500m"
+      requestsmemory: 500Mi
+    envName: TB_SERVICE_ID
+    fieldPath: metadata.name
+    env:
+      ZOOKEEPER_ENABLED: "true"
+      ZOOKEEPER_URL: "zookeeper:2181"
+    volumeMounts:
+      - mountPath: /config
+        name: tb-coap-transport-config
+  service:
+    name: tb-coap-loadbalancer
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    ports:
+    - port: 5683
+      targetPort: 5683
+      name: coap
+      protocol: UDP
+    - port: 5684
+      targetPort: 5684
+      name: coaps
+      protocol: UDP
+## ingress-values
+## http-ingress
+http_ingress:
+    name: tb-http-loadbalancer-new
+    paths:
+      - path: /api/v1/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-http-transport
+            port: 
+              number: 8080
+      - path: /static/rulenode/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-node
+            port:
+              number: 8080
+      - path: /static/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-web-ui
+            port:
+              number: 8080
+      - path: /index.html
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-web-ui
+            port:
+              number: 8080
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-node
+            port:
+              number: 8080
+## https ingress
+https_ingress:
+    name: tb-https-loadbalancer
+    annotations:
+      kubernetes.io/ingress.global-static-ip-name: vvdn-ice-http-lb-address
+      networking.gke.io/managed-certificates: managed-cert
+      networking.gke.io/v1beta1.FrontendConfig: vvdn-ice-http-fe-config
+    paths:
+      - path: /api/v1/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-http-transport
+            port:
+              number: 8080
+      - path: /static/rulenode/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-node
+            port:
+              number: 8080
+      - path: /static/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-web-ui
+            port:
+              number: 8080
+      - path: /index.html
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-web-ui
+            port:
+              number: 8080
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tb-node
+            port:
+              number: 8080
+    ManagedCertificate:
+      name: managed-cert
+      domains:
+        - vvdnicon.com
+    FrontendConfig:
+      name: vvdn-ice-http-fe-config
+      enabled: true
+## database-setup-job
+database_setup_job:
+  Job:
+    name: database-setup
+    completions: 3
+    restartPolicy: OnFailure
+    containerName: tb-db-setup
+    imagePullPolicy: Always
+## reporting cronjob
+reporting_cronjob:
+  restartPolicy: OnFailure
+  image: gcr.io/vvdn-ic-public/vvdn-ice/send_report:2.0.5
+  imagePullPolicy: Always
+  name: send-dummy-report
+  name2: ubbagent
+  sidecarImage: gcr.io/cloud-marketplace-tools/metering/ubbagent:latest
+  pghost: PGHOST
+  pgdatabase: PGDATABASE
+  pguser: PGUSER
+  pgpassword: PGPASSWORD
+  pgport: PGPORT
+  value1: "ha-postgres-postgresql-ha-pgpool.{{.Values.namespace}}.svc.cluster.local"
+  value2: "vvdn-ice-test"
+  value3: "postgres"
+  value4: vvdnicon
+  value5: "5432"

@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.kafka.configmap1.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.kafka.configmap1.labels }}
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  TB_QUEUE_TYPE: {{ .Values.kafka.configmap1.TB_QUEUE_TYPE }}
+  TB_KAFKA_SERVERS: {{ .Values.kafka.configmap1.TB_KAFKA_SERVERS }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.kafka.configmap2.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+data:
+  start-node.sh: {{ index .Values "kafka" "configmap2" "start-node.sh" | toYaml | indent 2 }}
+  tools-log4j.properties: {{ index .Values "kafka" "configmap2" "tools-log4j.properties" | toYaml | indent 2 }}
+  log4j.properties: {{ index .Values "kafka" "configmap2" "log4j.properties" | toYaml | indent 2 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.kafka.statefulset.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  serviceName: {{ .Values.kafka.statefulset.serviceName | quote }}
+  podManagementPolicy: {{ .Values.kafka.statefulset.podManagementPolicy }}
+  selector:
+    matchLabels:
+      app: {{ .Values.kafka.statefulset.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.kafka.statefulset.name }}
+    spec:
+      containers:
+        - name: {{ .Values.kafka.statefulset.containerName }}
+          imagePullPolicy: {{ .Values.kafka.statefulset.imagePullPolicy }}
+          image: {{ .Values.kafka.statefulset.image }}
+          ports:
+            {{- range .Values.kafka.statefulset.ports }}
+            - containerPort: {{ .containerPort }}
+              name: {{ .name }}
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.kafka.statefulset.resources.limitscpu | quote }}
+              memory: {{ .Values.kafka.statefulset.resources.limitsmemory }}
+            requests:
+              cpu: {{ .Values.kafka.statefulset.resources.requestscpu | quote }}
+              memory: {{ .Values.kafka.statefulset.resources.requestsmemory }}
+          command: ["/tmp/start-node.sh"]
+          readinessProbe:
+            periodSeconds: {{ .Values.kafka.statefulset.readinessProbeperiodSeconds }}
+            tcpSocket:
+              port: {{ .Values.kafka.statefulset.readinessProbetcpSocketport }}
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.kafka.statefulset.livenessProbeinitialDelaySeconds }}
+            periodSeconds: {{ .Values.kafka.statefulset.livenessProbeperiodSeconds }}
+            tcpSocket:
+              port: {{ .Values.kafka.statefulset.livenessProbetcpSocketport }}
+          env:
+          {{- include "helpers.list-env-tb-kafka" . | indent 7 }}
+          volumeMounts:
+            {{- range .Values.kafka.statefulset.volumeMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.kafka.statefulset.volumesName }}
+          configMap:
+            name: {{ .Values.kafka.configmap2.name }}
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.kafka.statefulset.metadataName1 }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.kafka.statefulset.requestStorage1 }}
+    - metadata:
+        name: {{ .Values.kafka.statefulset.metadataName2 }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.kafka.statefulset.requestStorage2 }}
+    - metadata:
+        name: {{ .Values.kafka.statefulset.metadataName3 }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.kafka.statefulset.requestStorage3 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.kafka.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.kafka.service.type }}
+  selector:
+    app: {{ .Values.kafka.statefulset.name }}
+  ports:
+    {{- range .Values.kafka.service.ports }}
+    - port: {{ .port }}
+      name: {{ .name }}
+    {{- end }}
+  clusterIP: {{ .Values.kafka.service.clusterIP }}

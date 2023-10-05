@@ -1,0 +1,15 @@
+# Use a minimal base image
+FROM alpine:3.14
+
+# Update package lists and install necessary packages
+RUN apk update && \
+    apk add --no-cache postgresql-client curl jq && \
+    rm -rf /var/cache/apk/*
+WORKDIR /
+
+COPY send_report.sh .
+
+# Make the script executable (if needed)
+RUN chmod +x send_report.sh
+
+ENTRYPOINT ["sh", "send_report.sh"]

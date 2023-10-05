@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.web_ui.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  replicas: {{ .Values.web_ui.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.web_ui.deployment.name}}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.web_ui.deployment.name }}
+    spec:
+      containers:
+      - name: {{  .Values.web_ui.deployment.containerName }}
+        imagePullPolicy: {{ .Values.web_ui.deployment.imagePullPolicy }}
+        image: {{ .Values.web_ui.deployment.image }}
+        ports:
+        {{- range .Values.web_ui.deployment.containerPorts }}
+        - containerPort: {{ .containerPort }}
+          name: {{ .name }}
+        {{- end }}
+        resources:
+          limits:
+            cpu: {{ .Values.web_ui.deployment.resources.limitscpu | quote }}
+            memory: {{ .Values.web_ui.deployment.resources.limitsmemory }}
+          requests:
+            cpu: {{ .Values.web_ui.deployment.resources.requestscpu | quote }}
+            memory: {{ .Values.web_ui.deployment.resources.requestsmemory }}
+        env:
+        {{- include "helpers.list-env-tb-webui" . | indent 5}}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.web_ui.deployment.livenessProbepath }}
+            port: {{ .Values.web_ui.deployment.livenessProbeport }}
+          initialDelaySeconds: {{ .Values.web_ui.deployment.livenessProbeinitialDelaySeconds }}
+          timeoutSeconds: {{ .Values.web_ui.deployment.livenessProbetimeoutSeconds }}
+      restartPolicy: {{ .Values.web_ui.restartPolicy }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.web_ui.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.web_ui.service.type }}
+  selector:
+    app: {{ .Values.web_ui.deployment.name }}
+  ports:
+  {{- range .Values.web_ui.service.ports }}
+  - port: {{ .port }}
+    name: {{ .name }}
+  {{- end }}

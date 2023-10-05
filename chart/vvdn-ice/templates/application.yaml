@@ -1,0 +1,46 @@
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: "{{ .Release.Name }}"
+  annotations:
+    kubernetes-engine.cloud.google.com/icon: >-
+      data:image/png;base64,{{ .Files.Get "logo.png" | b64enc }}
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "vvdn-ice", "product_id": "vvdn-ice", "partner_name": "VVDN"}'
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  descriptor:
+    type: "VVDN"
+    version: '2.0.5'
+    description: |-
+      Kubernetes based installation for the Intelligent Cloud Engine powered by VVDN.
+    maintainers:
+    - name: VVDN
+      url: https://cloud.vvdntech.com/intelligent-cloud-engine
+    links:
+    - description: 'Official documentation for the VVDN ICE'
+      url: https://cloud.vvdntech.com/intelligent-cloud-engine
+    notes: |-
+            
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ .Release.Name }}"
+  componentKinds:
+  - group: apps/v1
+    kind: Deployment
+  - group: v1
+    kind: ConfigMap
+  - group: v1
+    kind: Secret
+  - group: v1
+    kind: Service
+  - group: v1
+    kind: PersistentVolumeClaim
+  - group: networking.k8s.io
+    kind: Ingress
+  - group: apps/v1
+    kind: StatefulSet
+      #- group: batch/v1
+      #kind: CronJob
+  - group: batch/v1
+    kind: Job

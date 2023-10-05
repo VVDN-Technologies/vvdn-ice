@@ -1,0 +1,16 @@
+properties:
+  coapTransport:
+    type: boolean
+    default: false
+  lwm2mTransport:
+    type: boolean
+    default: false
+  mqttTransport:
+    type: boolean
+    default: false
+  snmpTransport:
+    type: boolean
+    default: false
+  httpsIngress:
+    type: boolean
+    default: false
