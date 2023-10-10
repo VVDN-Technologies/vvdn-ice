@@ -100,7 +100,7 @@ helm install "$APP_INSTANCE_NAME" chart/vvdn-ice \
 
 # Using the app
 
-Retrieve IP address of both the Ingress using this command
+Retrieve IP address of the Ingress which is of loadbalancer type using this command
 
 ```shell
 kubectl get ingress app-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
