@@ -103,7 +103,7 @@ helm install "$APP_INSTANCE_NAME" chart/vvdn-ice \
 Retrieve IP address of the Ingress which is of loadbalancer type using this command
 
 ```shell
-kubectl get ingress app-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+kubectl get ingress tb-http-loadbalancer-new -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 Add the DNS records for all the domains to the above IP, if you are using staticip as parameter above you can directly map to that IP instead of retrieving from ingress.
