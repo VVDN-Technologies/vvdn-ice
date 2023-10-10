@@ -10,6 +10,7 @@ To learn more about VVDN-Intelligent Cloud Engine, see [this](https://cloud.vvdn
 # Installation
 ## Quick Install with Google Cloud Marketplace
 Create a new Google Cloud Platform project (recommended) or choose an existing one.
+
 Get up and running with a few clicks! Install this VVDN ICE app to a Google Kubernetes Engine cluster using Google Cloud Marketplace. Follow the [on-screen instructions]
 
 ## Command line instructions
