@@ -94,7 +94,7 @@ export NAMESPACE=default #Namespace where you want to deploy the application
 
 ```shell
 helm install "$APP_INSTANCE_NAME" chart/vvdn-ice \
-  --create-namespace --namespace "$NAMESPACE" \
+  --create-namespace --namespace "$NAMESPACE"
 ```
 
 # Using the app
