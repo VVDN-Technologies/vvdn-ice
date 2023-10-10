@@ -60,7 +60,44 @@ For zonal clusters, use --zone=ZONE instead of --region=REGION.
 
 ```shell
 git clone https://github.com/VVDN-Technologies/vvdn-ice.git
-cd 
+cd vvdn-ice
+```
+
+#### Install the Application resource definition
+
+An Application resource is a collection of individual Kubernetes components,
+such as Services, Deployments, and so on, that you can manage as a group.
+
+To set up your cluster to understand Application resources, run the following
+command:
+
+```shell
+kubectl apply -f "https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/crd/app-crd.yaml"
+```
+
+You need to run this command once.
+The Application resource is defined by the
+[Kubernetes SIG-apps](https://github.com/kubernetes/community/tree/master/sig-apps)
+community. The source code can be found on
+[github.com/kubernetes-sigs/application](https://github.com/kubernetes-sigs/application).
+
+#### Configure the app with environment variables
+
+Choose the instance name and namespace for the app:
+
+```shell
+export APP_INSTANCE_NAME=vvdn-ice  #Sample name for the application
+export NAMESPACE=default #Namespace where you want to deploy the application
+```
+
+#### Install the helm chart
+
+```shell
+helm install "$APP_INSTANCE_NAME" chart/vvdn-ice \
+  --create-namespace --namespace "$NAMESPACE" \
+```
+
+
 
 
 
