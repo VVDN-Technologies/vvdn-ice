@@ -46,7 +46,7 @@ export PROJECT=YOUR_PROJECT_ID
 export REGION=YOUR_REGION
 export ZONE=YOUR_ZONE
 
-gcloud container clusters create $CLUSTER --region=$REGION --project $PROJECT
+gcloud container clusters create $CLUSTER --region=$REGION --project $PROJECT --machine-type=e2-standard-4
 ```
 
 Configure `kubectl` to connect to the new cluster.
