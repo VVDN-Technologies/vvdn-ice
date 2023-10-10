@@ -99,7 +99,13 @@ helm install "$APP_INSTANCE_NAME" chart/vvdn-ice \
 
 # Using the app
 
+Retrieve IP address of both the Ingress using this command
 
+```shell
+kubectl get ingress app-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
+
+Add the DNS records for all the domains to the above IP, if you are using staticip as parameter above you can directly map to that IP instead of retrieving from ingress.
 
 
 
