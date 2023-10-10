@@ -59,6 +59,8 @@ For zonal clusters, use --zone=ZONE instead of --region=REGION.
 #### Clone this repo and the associated tools repo.
 
 ```shell
+git clone https://github.com/VVDN-Technologies/vvdn-ice.git
+cd 
 
 
 
