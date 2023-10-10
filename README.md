@@ -1,5 +1,5 @@
 # Overview
-VVDN-Intelligent Cloud Engine abbreviated as ICE is a secure and scalable cloud platform that enables IoT, Video, Automotive, AgriTech, HealthTech, and IoT enterprises to quickly onboard devices and make them cloud-connected.
+VVDN-Intelligent Cloud Engine abbreviated as ICE is a secure and scalable cloud platform that enables IoT, Video, Automotive, AgriTech, HealthTech, and IIoT enterprises to quickly onboard devices and make them cloud-connected.
 
 
 To learn more about VVDN-Intelligent Cloud Engine please refer here.
