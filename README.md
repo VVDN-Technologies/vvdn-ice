@@ -7,6 +7,8 @@ To learn more about VVDN-Intelligent Cloud Engine, see [this](https://cloud.vvdn
 
 ## Architecture
 
+![Architecture diagram](chart/ICEArchitecture.jpg)
+
 # Installation
 ## Quick Install with Google Cloud Marketplace
 Create a new Google Cloud Platform project (recommended) or choose an existing one.
