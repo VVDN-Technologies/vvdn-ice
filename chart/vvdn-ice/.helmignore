@@ -24,9 +24,7 @@
 
 ## template files
 
-postgres-ha-pgpool.yaml
-postgresql.yaml
 
-ubbagent-config.yaml
-reporting-cronjob.yaml
-fake_reporting_secret.yaml
+#ubbagent-config.yaml
+#reporting-cronjob.yaml
+#fake_reporting_secret.yaml

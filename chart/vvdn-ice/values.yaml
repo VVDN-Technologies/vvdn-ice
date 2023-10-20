@@ -876,7 +876,7 @@ reporting_cronjob:
   pguser: PGUSER
   pgpassword: PGPASSWORD
   pgport: PGPORT
-  value1: "ha-postgres-postgresql-ha-pgpool.{{.Values.namespace}}.svc.cluster.local"
+  value1: "ha-postgres-postgresql-ha-pgpool"
   value2: "vvdn-ice-test"
   value3: "postgres"
   value4: vvdnicon
