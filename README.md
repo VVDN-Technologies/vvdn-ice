@@ -6,8 +6,7 @@ To learn more about VVDN-Intelligent Cloud Engine, see [this](https://cloud.vvdn
 
 
 ## Architecture
-<img width="1076" alt="Screenshot 2023-10-18 at 10 24 12 AM copy" src="https://github.com/VVDN-Technologies/vvdn-ice/assets/124333816/2f988250-f74c-45c3-a8e0-b0d28012c2c2">
-
+<img width="1378" alt="Screenshot 2023-10-19 at 11 27 11 AM copy" src="https://github.com/VVDN-Technologies/vvdn-ice/assets/124333816/a7432c03-b874-42cd-a259-18a441d926c4">
 
 # Installation
 ## Quick Install with Google Cloud Marketplace
