@@ -1,6 +1,6 @@
 #!/bin/bash
 
-num_devices=800
+#num_devices=800
 
 # SQL query to retrieve the number of total devices; including deleted devices in a day.
 # SQL_QUERY="select count(*)+(select count(*) from audit_log where action_type='DELETED' and entity_type='DEVICE' and action_status='SUCCESS' and to_timestamp(created_time/1000)::date = current_date) from device;"
@@ -8,7 +8,7 @@ SQL_QUERY="select count(*) as total_device from device;"
 
 
 # Execute the SQL query using psql and capture the result in num_devices
-# num_devices=$(psql -h $PGHOST -p $PGPORT -d $PGDATABASE  -U $PGUSER -c "$SQL_QUERY" -t | tr -d '[:space:]')
+num_devices=$(psql -h $PGHOST -p $PGPORT -d $PGDATABASE  -U $PGUSER -c "$SQL_QUERY" -t | tr -d '[:space:]')
 
 
 # Check for errors in the psql command
