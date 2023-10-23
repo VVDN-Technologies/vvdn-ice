@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
+echo "Starting..."
 #num_devices=800
 
 # SQL query to retrieve the number of total devices; including deleted devices in a day.
@@ -55,6 +56,14 @@ echo -e "Printing contents of generated report.json file:"
 cat report.json
 
 # Send a curl POST request
-curl -X POST -d "@report.json" 'http://localhost:4567/report'
+# curl -X POST -d "@report.json" 'http://localhost:4567/report'
 
-echo "Request Sent"
+# echo "Request Sent"
+if curl -X POST -d "@report.json" 'http://localhost:4567/report'; then
+    echo "Request sent successfully."
+else
+    echo "Request failed."
+fi
+
+
+sleep 300

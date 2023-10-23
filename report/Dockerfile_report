@@ -1,12 +1,12 @@
 # Use a minimal base image
-FROM alpine:3.14
+FROM alpine:3.18
 
 # Update package lists and install necessary packages
 RUN apk update && \
     apk add --no-cache postgresql-client curl jq && \
     rm -rf /var/cache/apk/*
 WORKDIR /
-
+ 
 COPY send_report.sh .
 
 # Make the script executable (if needed)
