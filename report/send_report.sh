@@ -37,7 +37,7 @@ metric_value=""
 # fi
 
 if [ $num_devices -le 10000 ]; then
-    metric_name="standard"
+    metric_name="plan1_tier"
 elif [ $num_devices -gt 10000 ]; then
     metric_name="custom"
     echo "Number of devices is greater than 10000. Please contact  google_marketplace@vvdntech.in for custom pricing."
@@ -59,11 +59,10 @@ cat report.json
 # curl -X POST -d "@report.json" 'http://localhost:4567/report'
 
 # echo "Request Sent"
+
+
 if curl -X POST -d "@report.json" 'http://localhost:4567/report'; then
     echo "Request sent successfully."
 else
     echo "Request failed."
 fi
-
-
-sleep 300

@@ -24,7 +24,4 @@
 
 ## template files
 
-
-#ubbagent-config.yaml
-#reporting-cronjob.yaml
-#fake_reporting_secret.yaml
+fake_reporting_secret.yaml
