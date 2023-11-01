@@ -14,19 +14,19 @@ spec:
           containers:
           - image: {{ .Values.reporting_cronjob.image }}
             imagePullPolicy: {{ .Values.reporting_cronjob.imagePullPolicy }}
-            name: {{ .Values.reporting_cronjob.name }}
+            name: send-dummy-report
             env:
-            - name: {{ .Values.reporting_cronjob.pghost }}
-              value: {{ .Values.reporting_cronjob.value1 | quote }}
-            - name: {{ .Values.reporting_cronjob.pgdatabase }}
-              value: {{ .Values.reporting_cronjob.value2 | quote }}
-            - name: {{ .Values.reporting_cronjob.pguser }}
-              value: {{ .Values.reporting_cronjob.value3 | quote }}
-            - name: {{ .Values.reporting_cronjob.pgpassword }}
-              value: {{ .Values.reporting_cronjob.value4 }}
-            - name: {{ .Values.reporting_cronjob.pgport }}
-              value: {{ .Values.reporting_cronjob.value5 | quote }}
-          - name: {{ .Values.reporting_cronjob.name2 }}
+            - name: PGHOST
+              value: {{ .Values.reporting_cronjob.pghost | quote }}
+            - name: PGDATABASE
+              value: {{ .Values.reporting_cronjob.pgdatabase | quote }}
+            - name: PGUSER
+              value: {{ .Values.reporting_cronjob.pguser | quote }}
+            - name: PGPASSWORD
+              value: {{ .Values.reporting_cronjob.pgpassword | quote}}
+            - name: PGPORT
+              value: {{ .Values.reporting_cronjob.pgport | quote }}
+          - name: ubbagent
             image: {{ .Values.reporting_cronjob.sidecarImage }}
             env:
             - name: AGENT_CONFIG_FILE

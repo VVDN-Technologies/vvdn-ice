@@ -1,5 +1,5 @@
 # Use a minimal base image
-FROM alpine:3.18
+FROM alpine:latest
 
 # Update package lists and install necessary packages
 RUN apk update && \
@@ -12,4 +12,5 @@ COPY send_report.sh .
 # Make the script executable (if needed)
 RUN chmod +x send_report.sh
 
-ENTRYPOINT ["sh", "send_report.sh"]
+# ENTRYPOINT ["sh", "send_report.sh"]
+ENTRYPOINT ["sh", "-c", "sleep 30 && ./send_report.sh"]

@@ -18,6 +18,12 @@ x-google-marketplace:
           type: FULL
         AppVersion:
           type: TAG
+  clusterConstraints:
+    resources:
+    - replicas: 6
+      requests:
+        memory: 16Gi
+        cpu: 4
 
 properties:
   name:                   
