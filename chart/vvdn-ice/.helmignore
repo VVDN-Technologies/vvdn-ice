@@ -23,5 +23,5 @@
 .vscode/
 
 ## template files
-
+reporting-cronjob.yaml
 fake_reporting_secret.yaml

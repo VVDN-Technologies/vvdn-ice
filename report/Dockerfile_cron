@@ -1,0 +1,11 @@
+FROM alpine:latest
+
+RUN apk update && \
+    apk add --no-cache postgresql-client curl jq && \
+    rm -rf /var/cache/apk/*
+
+COPY send_report.sh /usr/local/bin/
+
+RUN echo "* * * * * /usr/local/bin/send_report.sh >> /var/log/report.log 2>&1" > /etc/crontabs/root
+
+CMD ["/usr/sbin/crond", "-f", "-d", "0"]
