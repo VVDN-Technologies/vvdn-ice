@@ -1,11 +1,8 @@
+#Copies golang binary and schedule it through cron
 FROM alpine:latest
 
-RUN apk update && \
-    apk add --no-cache postgresql-client curl jq && \
-    rm -rf /var/cache/apk/*
+COPY pricing-reporting /usr/local/bin/
 
-COPY send_report.sh /usr/local/bin/
-
-RUN echo "* * * * * /usr/local/bin/send_report.sh >> /var/log/report.log 2>&1" > /etc/crontabs/root
+RUN echo "15 * * * * /usr/local/bin/pricing-reporting" > /etc/crontabs/root
 
 CMD ["/usr/sbin/crond", "-f", "-d", "0"]
