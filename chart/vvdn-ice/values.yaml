@@ -7,6 +7,8 @@ lwm2mTransport: false
 mqttTransport: false
 snmpTransport: false
 httpsIngress: false
+reportingSecret: null
+
 ## tb-node
 node:
   configmap:
@@ -874,3 +876,8 @@ reporting_cronjob:
   pguser: "postgres"
   pgpassword: vvdnicon
   pgport: "5432"
+
+## reporting deployment
+reporting_deployment:
+  image: gcr.io/vvdn-ic-public/vvdn-ice/send_report:2.0.5
+
