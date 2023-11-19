@@ -20,6 +20,7 @@ Get up and running with a few clicks! Install this VVDN ICE app to a Google Kube
 You can use [Google Cloud Shell](https://cloud.google.com/shell/) or a local
 workstation to complete the following steps.
 
+[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/VVDN-Technologies/vvdn-ice&cloudshell_open_in_editor=README.md)
 ### Prerequisites
 
 #### Set up command-line tools
@@ -50,9 +51,8 @@ export PROJECT=YOUR_PROJECT_ID
 export REGION=YOUR_REGION
 export ZONE=YOUR_ZONE
 
-gcloud container clusters create $CLUSTER --region=$REGION --project $PROJECT --machine-type=e2-standard-4
+gcloud container clusters create $CLUSTER --region=$REGION --project $PROJECT --machine-type=e2-standard-4 --num-nodes=2
 ```
-
 Configure `kubectl` to connect to the new cluster.
 
 ```shell
@@ -109,11 +109,3 @@ Retrieve IP address of the Ingress which is of loadbalancer type using this comm
 ```shell
 kubectl get ingress tb-http-loadbalancer-new -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
-
-Add the DNS records for all the domains to the above IP, if you are using staticip as parameter above you can directly map to that IP instead of retrieving from ingress.
-
-
-
-
-
-
