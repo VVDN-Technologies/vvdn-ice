@@ -14,3 +14,6 @@ properties:
   httpsIngress:
     type: boolean
     default: false
+  https_ingress.ManagedCertificate.domains:
+    type: string
+    default: nil

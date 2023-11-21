@@ -48,6 +48,7 @@ properties:
   mqttTransport:
     type: boolean
     default: false
+    title: Deploys mqtt transport service
     description: Tick this if you want to deploy mqtt transport service
   snmpTransport:
     type: boolean
@@ -64,6 +65,10 @@ properties:
     default: false
     title: Ticking this will add https Ingress.
     description: For this to work you must be having your domain name added in CloudDNS.
+  https_ingress.ManagedCertificate.domains:
+    type: string
+    title: Domain name to add for LoadBalancer if you tick above box.
+    description: Provide a domain name for https LoadBalancer, if you choose to go with http LoadBalancer add 'nil' here.
   reportingSecret:
     type: string
     x-google-marketplace:
@@ -78,3 +83,4 @@ required:
 - mqttTransport
 - snmpTransport
 - httpsIngress
+- https_ingress.ManagedCertificate.domains

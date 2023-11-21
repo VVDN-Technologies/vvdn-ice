@@ -58,6 +58,4 @@ spec:
       volumes:
       - name: ubbagent-config
         configMap:
-          #name: test-ubbagent-config
-          #name: {{ .Release.Name }}-ubbagent-config
           name: {{ .Release.Name }}-ubbagent-config
