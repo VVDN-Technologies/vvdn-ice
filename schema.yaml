@@ -68,7 +68,8 @@ properties:
   https_ingress.ManagedCertificate.domains:
     type: string
     title: Domain name to add for LoadBalancer if you tick above box.
-    description: Provide a domain name for https LoadBalancer, if you choose to go with http LoadBalancer add 'nil' here.
+    description: Provide a domain name for https LoadBalancer, if you choose to go with http LoadBalancer add 'no-value' here.
+    default: sample-domain.com
   reportingSecret:
     type: string
     x-google-marketplace:

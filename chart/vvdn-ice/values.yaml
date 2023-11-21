@@ -853,7 +853,7 @@ https_ingress:
     ManagedCertificate:
       name: managed-cert
       domains:
-        - vvdnicon.com
+        - sample-domain.com
     FrontendConfig:
       name: vvdn-ice-http-fe-config
       enabled: true

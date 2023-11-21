@@ -16,4 +16,4 @@ properties:
     default: false
   https_ingress.ManagedCertificate.domains:
     type: string
-    default: nil
+    default: sample-domain.com
