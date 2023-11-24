@@ -14,6 +14,8 @@ properties:
   httpsIngress:
     type: boolean
     default: false
-  https_ingress.ManagedCertificate.domains:
+  https_ingress.domain:
     type: string
-    default: sample-domain.com
+    default: example.com
+  staticip:
+    type: string

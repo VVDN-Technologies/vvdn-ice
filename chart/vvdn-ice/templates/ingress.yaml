@@ -1,4 +1,5 @@
 {{- if .Values.httpsIngress }}
+{{- if ne .Values.https_ingress.domain "nil" }}
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
@@ -7,9 +8,8 @@ metadata:
     app.kubernetes.io/name: "{{ .Release.Name }}"
 spec:
   domains:
-  {{- range .Values.https_ingress.ManagedCertificate.domains }}
-    - {{ . }}
-  {{- end }}
+  - {{ .Values.https_ingress.domain }}
+{{- end }}
 ---
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
@@ -29,12 +29,21 @@ metadata:
     app.kubernetes.io/name: "{{ .Release.Name }}"
   namespace: {{ .Values.namespace }}
   annotations: 
-  {{- range $key, $value := $.Values.https_ingress.annotations }}
-    {{ $key }}: {{ if eq $value "gce" }}{{ quote $value }}{{ else }}{{ $value }}{{ end }}
-  {{- end }}
+    {{- if ne .Values.https_ingress.domain "nil" }}
+    networking.gke.io/managed-certificates: {{ .Values.https_ingress.ManagedCertificate.name }}
+    {{- end }}
+    networking.gke.io/v1beta1.FrontendConfig: {{ .Values.https_ingress.FrontendConfig.name}}
+    {{- if ne .Values.staticip "nil" }}
+    kubernetes.io/ingress.global-static-ip-name: {{ .Values.staticip }}
+    {{- end }}
 spec:
   rules:
+    {{- if ne .Values.https_ingress.domain "nil" }}
+    - host: {{ .Values.https_ingress.domain }}
+      http:
+    {{- else }}
     - http:
+    {{- end }}
         paths:
         {{- range .Values.https_ingress.paths }}
           - path: {{ .path }}
@@ -53,9 +62,18 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: "{{ .Release.Name }}"
+  annotations: 
+    {{- if ne .Values.staticip "nil" }}
+    kubernetes.io/ingress.global-static-ip-name: {{ .Values.staticip }}
+    {{- end }}
 spec:
   rules:
+    {{- if ne .Values.https_ingress.domain "nil" }}
+    - host: {{ .Values.https_ingress.domain }}
+      http:
+    {{- else }}
     - http:
+    {{- end }}
         paths:
         {{- range .Values.http_ingress.paths }}
           - path: {{ .path }}

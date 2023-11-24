@@ -4,10 +4,11 @@
 namespace: null
 coapTransport: false
 lwm2mTransport: false
-mqttTransport: false
+mqttTransport: true
 snmpTransport: false
 httpsIngress: false
 reportingSecret: null
+staticip: nil
 
 ## tb-node
 node:
@@ -56,7 +57,7 @@ node:
     name: tb-node-db-config
     SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
     SPRING_DRIVER_CLASS_NAME: org.postgresql.Driver
-    SPRING_DATASOURCE_URL: jdbc:postgresql://ha-postgres-postgresql-ha-pgpool:5432/vvdn-ice-test
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/vvdn-ice-test
     SPRING_DATASOURCE_USERNAME: postgres
     SPRING_DATASOURCE_PASSWORD: vvdnicon
   statefulSet:
@@ -810,10 +811,7 @@ http_ingress:
 ## https ingress
 https_ingress:
     name: tb-https-loadbalancer
-    annotations:
-      #kubernetes.io/ingress.global-static-ip-name: vvdn-ice-http-lb-address
-      networking.gke.io/managed-certificates: managed-cert
-      networking.gke.io/v1beta1.FrontendConfig: vvdn-ice-http-fe-config
+    domain: vvdn.tarunpalavalasa.store
     paths:
       - path: /api/v1/*
         pathType: ImplementationSpecific
@@ -852,8 +850,6 @@ https_ingress:
               number: 8080
     ManagedCertificate:
       name: managed-cert
-      domains:
-        - sample-domain.com
     FrontendConfig:
       name: vvdn-ice-http-fe-config
       enabled: true
@@ -865,17 +861,6 @@ database_setup_job:
     restartPolicy: OnFailure
     containerName: tb-db-setup
     imagePullPolicy: Always
-## reporting cronjob
-reporting_cronjob:
-  restartPolicy: OnFailure
-  image: gcr.io/vvdn-ic-public/vvdn-ice/send_report:2.0.5
-  imagePullPolicy: Always
-  sidecarImage: gcr.io/cloud-marketplace-tools/metering/ubbagent:latest
-  pghost:  "ha-postgres-postgresql-ha-pgpool"
-  pgdatabase: "vvdn-ice-test"
-  pguser: "postgres"
-  pgpassword: vvdnicon
-  pgport: "5432"
 
 ## reporting deployment
 reporting_deployment:

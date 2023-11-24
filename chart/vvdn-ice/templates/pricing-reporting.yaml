@@ -26,7 +26,7 @@ spec:
               name: {{ .Values.reportingSecret }}
               key: consumer-id
         - name: PGHOST
-          value: ha-postgres-postgresql-ha-pgpool
+          value: postgres
         - name: PGDATABASE
           value: vvdn-ice-test
         - name: PGUSER
