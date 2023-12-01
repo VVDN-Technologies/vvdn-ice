@@ -18,6 +18,12 @@ x-google-marketplace:
           type: FULL
         AppVersion:
           type: TAG
+  clusterConstraints:
+    resources:
+    - replicas: 6
+      requests:
+        memory: 16Gi
+        cpu: 4
 
 properties:
   name:                   
@@ -39,10 +45,11 @@ properties:
     default: false
     title: Deploys lwm2m transport service
     description: Tick this if you want to deploy lwm2m transport service
-  mqttTransport:
-    type: boolean
-    default: false
-    description: Tick this if you want to deploy mqtt transport service
+  # mqttTransport:
+  #   type: boolean
+  #   default: false
+  #   title: Deploys mqtt transport service
+  #   description: Tick this if you want to deploy mqtt transport service
   snmpTransport:
     type: boolean
     default: false
@@ -56,8 +63,17 @@ properties:
   httpsIngress:
     type: boolean
     default: false
-    title: Ticking this will add https Ingress.
-    description: For this to work you must be having your domain name added in CloudDNS.
+    title: Ticking this will deploy https Ingress
+    description: This will add https for the Kubernetes Ingress.
+  staticip:
+    type: string
+    title: The Name of the Reserved External IP
+    description: The Reserved External IP must be created within the same project as well as region as the GKE Cluster; One can use 'Global' IP instead of 'Regional' IP.
+  https_ingress.domain:
+    type: string
+    title: Domain name to add for LoadBalancer
+    description: Provide a domain name to access the application. Above provided static ip should be added to DNS records of this domain in order to access via Domain. 
+    default: example.com
   reportingSecret:
     type: string
     x-google-marketplace:
@@ -69,6 +85,7 @@ required:
 - namespace
 - coapTransport
 - lwm2mTransport
-- mqttTransport
+# - mqttTransport
 - snmpTransport
 - httpsIngress
+- https_ingress.domain

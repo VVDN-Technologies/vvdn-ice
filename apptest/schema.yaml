@@ -14,3 +14,8 @@ properties:
   httpsIngress:
     type: boolean
     default: false
+  https_ingress.domain:
+    type: string
+    default: example.com
+  staticip:
+    type: string
