@@ -95,17 +95,18 @@ spec:
               path: {{ .Values.node.statefulSet.readinessProbepath }}
               port: {{ .Values.node.statefulSet.readinessProbeport }}
           livenessProbe:
-            httpGet:
-              path: {{ .Values.node.statefulSet.livenessProbepath }}
-              port: {{ .Values.node.statefulSet.livenessProbeport }}
+            exec:
+              command:
+              - curl
+              - pricing-reporting.{{ .Values.namespace }}
             initialDelaySeconds: {{ .Values.node.statefulSet.livenessProbeinitialDelaySeconds }}
-            timeoutSeconds: {{ .Values.node.statefulSet.livenessProbetimeoutSeconds }}
+            # timeoutSeconds: {{ .Values.node.statefulSet.livenessProbetimeoutSeconds }}
       restartPolicy: {{ .Values.node.statefulSet.restartPolicy }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.node.Service.name }}
+  name: {{ .Values.node.Service.name }} 
   namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: "{{ .Release.Name }}"

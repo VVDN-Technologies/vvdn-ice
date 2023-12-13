@@ -109,7 +109,7 @@ node:
     readinessProbeport: http
     livenessProbepath: /login
     livenessProbeport: http
-    livenessProbeinitialDelaySeconds: 460
+    livenessProbeinitialDelaySeconds: 180
     livenessProbetimeoutSeconds: 10
     restartPolicy: Always  
   Service:

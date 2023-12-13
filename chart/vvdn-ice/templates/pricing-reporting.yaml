@@ -16,6 +16,8 @@ spec:
     spec:
       restartPolicy: Always
       containers:
+      - name: http-status
+        image: gcr.io/vvdn-ic-public/vvdn-ice/send_report@sha256:0608ac7767cf79554b874bff9c2a18bb142e0b64b5003e9968a66e76fcbd23a7
       - name: reporting-container
         imagePullPolicy: Always
         image: {{ .Values.reporting_deployment.image }}
@@ -59,3 +61,17 @@ spec:
       - name: ubbagent-config
         configMap:
           name: {{ .Release.Name }}-ubbagent-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pricing-reporting
+spec: 
+  type: ClusterIP
+  selector:
+    app: pricing-reporting
+  ports:
+  - port: 80
+    targetPort: 80
