@@ -16,8 +16,6 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-      - name: http-status
-        image: gcr.io/vvdn-ic-public/vvdn-ice/send_report@sha256:0608ac7767cf79554b874bff9c2a18bb142e0b64b5003e9968a66e76fcbd23a7
       - name: reporting-container
         imagePullPolicy: Always
         image: {{ .Values.reporting_deployment.image }}
@@ -37,6 +35,8 @@ spec:
           value: vvdnicon
         - name: PGPORT
           value: "5432"
+      - name: http-status
+        image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0
       - name: ubbagent
         image: gcr.io/cloud-marketplace-tools/metering/ubbagent:latest 
         env:
@@ -73,5 +73,5 @@ spec:
   selector:
     app: pricing-reporting
   ports:
-  - port: 80
-    targetPort: 80
+  - port: 8080
+    targetPort: 8080

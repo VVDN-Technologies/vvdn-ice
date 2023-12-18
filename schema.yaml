@@ -71,7 +71,7 @@ properties:
     description: The Reserved External IP must be created within the same project as well as region as the GKE Cluster; One can use 'Global' IP instead of 'Regional' IP.
   https_ingress.domain:
     type: string
-    title: Domain name to add for LoadBalancer
+    title: Domain name to add for LoadBalancer; you should replace "example.com" with your Domain name.
     description: Provide a domain name to access the application. Above provided static ip should be added to DNS records of this domain in order to access via Domain. 
     default: example.com
   reportingSecret:

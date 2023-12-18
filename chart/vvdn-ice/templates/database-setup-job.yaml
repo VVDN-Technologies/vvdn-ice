@@ -21,6 +21,10 @@ spec:
               {{- end }}
       - name: {{ .Values.node.statefulSet.volumesName2 }}
         emptyDir: {}
+      initContainers:
+      - name: init-db-check
+        image: busybox:1.36
+        command: ['sh', '-c', "until nslookup postgres.{{ .Values.namespace }}.svc.cluster.local; do echo waiting for postgres service to come up; sleep 2; done"]
       containers:
       - name: {{ .Values.database_setup_job.Job.containerName }}
         imagePullPolicy: {{ .Values.database_setup_job.Job.imagePullPolicy }}

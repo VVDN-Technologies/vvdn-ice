@@ -39,9 +39,9 @@ metadata:
 spec:
   rules:
     {{- if ne .Values.https_ingress.domain "nil" }}
-    - host: {{ .Values.https_ingress.domain }}
+    - host: {{ if eq .Values.https_ingress.domain "example.com" }}""{{ else }}{{ .Values.https_ingress.domain }}{{ end }}
       http:
-    {{- else }}
+    {{- else }}   
     - http:
     {{- end }}
         paths:
@@ -69,7 +69,8 @@ metadata:
 spec:
   rules:
     {{- if ne .Values.https_ingress.domain "nil" }}
-    - host: {{ .Values.https_ingress.domain }}
+    - host: {{ if eq .Values.https_ingress.domain "example.com" }}""{{ else }}{{ .Values.https_ingress.domain }}
+      {{ end }}
       http:
     {{- else }}
     - http:

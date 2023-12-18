@@ -98,7 +98,7 @@ spec:
             exec:
               command:
               - curl
-              - pricing-reporting.{{ .Values.namespace }}
+              - pricing-reporting.{{ .Values.namespace }}:8080
             initialDelaySeconds: {{ .Values.node.statefulSet.livenessProbeinitialDelaySeconds }}
             # timeoutSeconds: {{ .Values.node.statefulSet.livenessProbetimeoutSeconds }}
       restartPolicy: {{ .Values.node.statefulSet.restartPolicy }}
