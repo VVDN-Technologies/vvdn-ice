@@ -19,6 +19,12 @@ spec:
       - name: reporting-container
         imagePullPolicy: Always
         image: {{ .Values.reporting_deployment.image }}
+        readinessProbe:
+          exec:
+            command: ["psql", "-h", "$PGHOST", "-p", "5432", "-d", "$PGDATABASE", "-U", "$PGUSER", "-c", "\\dt"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3 
         env:
         - name: AGENT_CONSUMER_ID
           valueFrom:
@@ -36,7 +42,18 @@ spec:
         - name: PGPORT
           value: "5432"
       - name: http-status
-        image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0
+        image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0 
+        env:
+        - name: PGHOST
+          value: postgres
+        - name: PGDATABASE
+          value: vvdn-ice-test
+        - name: PGUSER
+          value: postgres
+        - name: PGPASSWORD
+          value: vvdnicon
+        - name: PGPORT
+          value: "5432"
       - name: ubbagent
         image: gcr.io/cloud-marketplace-tools/metering/ubbagent:latest 
         env:

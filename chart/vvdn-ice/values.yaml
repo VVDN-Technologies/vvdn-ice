@@ -1,17 +1,17 @@
 # Default values for vvdn-ice.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-namespace: null
-#namespace: test33
+#namespace: null
+namespace: test-ns
 coapTransport: false
 lwm2mTransport: false
 mqttTransport: true
 snmpTransport: false
 httpsIngress: false
-reportingSecret: null
-#reportingSecret: fake-reporting-secret
-staticip: nil
-#staticip: static-ip-2
+#reportingSecret: null
+reportingSecret: fake-reporting-secret
+#staticip: nil
+staticip: static-ip-2
 
 ## tb-node
 node:
@@ -867,4 +867,4 @@ database_setup_job:
 
 ## reporting deployment
 reporting_deployment:
-  image: gcr.io/vvdn-ic-public/vvdn-ice/send_report:2.0.5
+  image: gcr.io/vvdn-ic-public/vvdn-ice/send_report@sha256:bbd1da45ecb43c0c61a7c7e81db50987e1b994d3eeda821547e45cb6c8990a83 
