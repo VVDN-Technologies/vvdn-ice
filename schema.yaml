@@ -60,11 +60,11 @@ properties:
     default: true
     x-google-marketplace:
       type: INGRESS_AVAILABLE
-  httpsIngress:
-    type: boolean
-    default: false
-    title: Ticking this will deploy https Ingress
-    description: This will add https for the Kubernetes Ingress.
+  # httpsIngress:
+  #   type: boolean
+  #   default: false
+  #   title: Ticking this will deploy https Ingress
+  #   description: This will add https for the Kubernetes Ingress.
   staticip:
     type: string
     title: The Name of the Reserved External IP
@@ -73,7 +73,6 @@ properties:
     type: string
     title: Domain name to add for LoadBalancer; you should replace "example.com" with your Domain name.
     description: Provide a domain name to access the application. Above provided static ip should be added to DNS records of this domain in order to access via Domain. 
-    default: example.com
   reportingSecret:
     type: string
     x-google-marketplace:
@@ -87,5 +86,4 @@ required:
 - lwm2mTransport
 # - mqttTransport
 - snmpTransport
-- httpsIngress
-- https_ingress.domain
+# - httpsIngress

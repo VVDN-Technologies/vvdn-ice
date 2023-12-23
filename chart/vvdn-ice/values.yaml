@@ -6,7 +6,7 @@ coapTransport: false
 lwm2mTransport: false
 mqttTransport: true
 snmpTransport: false
-httpsIngress: false
+#httpsIngress: false
 reportingSecret: null
 staticip: nil
 
@@ -811,7 +811,7 @@ http_ingress:
 ## https ingress
 https_ingress:
     name: tb-https-loadbalancer
-    domain: "example.com"
+    domain: "vvdn.searcecloud.site"
     paths:
       - path: /api/v1/*
         pathType: ImplementationSpecific

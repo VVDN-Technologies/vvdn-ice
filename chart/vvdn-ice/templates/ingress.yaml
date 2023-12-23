@@ -1,4 +1,4 @@
-{{- if .Values.httpsIngress }}
+{{- if .Values.https_ingress.domain }}
 {{- if ne .Values.https_ingress.domain "nil" }}
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
@@ -38,12 +38,8 @@ metadata:
     {{- end }}
 spec:
   rules:
-    {{- if ne .Values.https_ingress.domain "nil" }}
-    - host: {{ if eq .Values.https_ingress.domain "example.com" }}""{{ else }}{{ .Values.https_ingress.domain }}{{ end }}
+    - host: {{ .Values.https_ingress.domain }}
       http:
-    {{- else }}   
-    - http:
-    {{- end }}
         paths:
         {{- range .Values.https_ingress.paths }}
           - path: {{ .path }}
@@ -68,13 +64,8 @@ metadata:
     {{- end }}
 spec:
   rules:
-    {{- if ne .Values.https_ingress.domain "nil" }}
-    - host: {{ if eq .Values.https_ingress.domain "example.com" }}""{{ else }}{{ .Values.https_ingress.domain }}
-      {{ end }}
+    - host: ""
       http:
-    {{- else }}
-    - http:
-    {{- end }}
         paths:
         {{- range .Values.http_ingress.paths }}
           - path: {{ .path }}
