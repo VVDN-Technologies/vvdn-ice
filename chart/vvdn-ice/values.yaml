@@ -1,17 +1,14 @@
 # Default values for vvdn-ice.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-#namespace: null
-namespace: test-ns
+namespace: null
 coapTransport: false
 lwm2mTransport: false
 mqttTransport: true
 snmpTransport: false
 httpsIngress: false
-#reportingSecret: null
-reportingSecret: fake-reporting-secret
-#staticip: nil
-staticip: static-ip-2
+reportingSecret: null
+staticip: nil
 
 ## tb-node
 node:

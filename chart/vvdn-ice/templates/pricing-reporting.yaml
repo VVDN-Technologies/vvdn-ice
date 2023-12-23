@@ -21,7 +21,7 @@ spec:
         image: {{ .Values.reporting_deployment.image }}
         readinessProbe:
           exec:
-            command: ["psql", "-h", "$PGHOST", "-p", "5432", "-d", "$PGDATABASE", "-U", "$PGUSER", "-c", "\\dt"]
+            command: ["psql", "-h", "postgres", "-p", "5432", "-d", "vvdn-ice-test", "-U", "postgres", "-c", "\\dt"]
           initialDelaySeconds: 5
           periodSeconds: 10
           failureThreshold: 3 
