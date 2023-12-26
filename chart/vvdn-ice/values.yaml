@@ -811,7 +811,7 @@ http_ingress:
 ## https ingress
 https_ingress:
     name: tb-https-loadbalancer
-    domain: "vvdn.searcecloud.site"
+    domain: ""
     paths:
       - path: /api/v1/*
         pathType: ImplementationSpecific

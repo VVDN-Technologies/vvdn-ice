@@ -1,4 +1,4 @@
-{{- if .Values.https_ingress.domain }}
+{{- if and (.Values.https_ingress.domain) (ne .Values.https_ingress.domain "example.com") }}
 {{- if ne .Values.https_ingress.domain "nil" }}
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
